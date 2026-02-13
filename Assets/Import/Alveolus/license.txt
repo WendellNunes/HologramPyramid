@@ -1,0 +1,11 @@
+Model Information:
+* title:	Alveoli Model
+* source:	https://sketchfab.com/3d-models/alveoli-model-bb1526fdcd204973ba5128b948eefc26
+* author:	odesypt (https://sketchfab.com/odesypt)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Alveoli Model" (https://sketchfab.com/3d-models/alveoli-model-bb1526fdcd204973ba5128b948eefc26) by odesypt (https://sketchfab.com/odesypt) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
