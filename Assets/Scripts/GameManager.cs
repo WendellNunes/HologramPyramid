@@ -1,20 +1,41 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+// =====================================================
+// MainGameManager.cs
+// Controla a cena principal: spawn do modelo, rotação, zoom, play/pause, fullscreen.
+// =====================================================
+
 public class MainGameManager : MonoBehaviour
 {
+    // =====================================================
+    // Scenes (Build Settings Index)
+    // =====================================================
     [Header("Scenes (Build Settings Index)")]
-    [SerializeField] private int menuSceneIndex = 2;   // <-- coloque aqui o índice do seu MENU (onde escolhe Lung/Bronchus/Alveolus)
+    [SerializeField] private int menuSceneIndex = 2; // índice do MENU
 
+    // =====================================================
+    // Spawn
+    // (Adicionamos Trachea e Heart)
+// =====================================================
     [Header("Spawn")]
     [SerializeField] private Transform spawnPoint;
+
     [SerializeField] private GameObject lungPrefab;
     [SerializeField] private GameObject bronchusPrefab;
     [SerializeField] private GameObject alveolusPrefab;
+    [SerializeField] private GameObject tracheaPrefab;
+    [SerializeField] private GameObject heartPrefab;
 
+    // =====================================================
+    // UI Panels
+    // =====================================================
     [Header("UI Panels")]
-    [SerializeField] private GameObject optionsPanel; // painel que aparece quando abre o menu (onde ficam turn/zoom/etc)
+    [SerializeField] private GameObject optionsPanel;
 
+    // =====================================================
+    // Toggle Buttons
+    // =====================================================
     [Header("Toggle Buttons (mesmo lugar)")]
     [SerializeField] private GameObject menuOpenButtonObj;
     [SerializeField] private GameObject menuCloseButtonObj;
@@ -25,34 +46,52 @@ public class MainGameManager : MonoBehaviour
     [SerializeField] private GameObject fullscreenOnButtonObj;
     [SerializeField] private GameObject fullscreenOffButtonObj;
 
+    // =====================================================
+    // Rotation
+    // =====================================================
     [Header("Rotation")]
     [SerializeField] private float rotationSpeedDegPerSec = 80f;
 
+    // =====================================================
+    // Zoom
+    // =====================================================
     [Header("Zoom")]
     [SerializeField] private float zoomSpeedPerSec = 0.6f;
     [SerializeField] private float minScale = 0.2f;
     [SerializeField] private float maxScale = 3.0f;
 
+    // =====================================================
+    // Beacon (opcional também na cena principal)
+    // Se quiser colocar o botão aqui também, já está pronto.
+    // =====================================================
+    [Header("Beacon URL (optional)")]
+    [SerializeField] private string beaconUrl = "https://SEU_LINK_AQUI";
+
+    // =====================================================
+    // Runtime refs
+    // =====================================================
     private GameObject currentModel;
     private Animator currentAnimator;
 
+    // =====================================================
+    // Input state
+    // =====================================================
     private enum Dir { None, Left, Right }
     private Dir holdRotate = Dir.None;
     private Dir autoRotate = Dir.None;
 
-    private Dir holdZoom = Dir.None; // Left = ZoomOut, Right = ZoomIn (vou mapear assim)
-    private Dir lastZoom = Dir.None;
+    private Dir holdZoom = Dir.None; // Left = ZoomOut, Right = ZoomIn
 
+    // =====================================================
+    // Unity lifecycle
+    // =====================================================
     private void Start()
     {
         SpawnSelectedPrefab();
         SetOptionsPanel(false);
         SetMenuToggle(isOpen: false);
 
-        // começa como "Play" visível (animação rodando)
         SetPlayPause(isPlaying: true);
-
-        // fullscreen começa desligado (você pode mudar)
         SetFullscreenToggle(isFullscreen: Screen.fullScreen);
     }
 
@@ -60,24 +99,28 @@ public class MainGameManager : MonoBehaviour
     {
         if (currentModel == null) return;
 
-        // ROTATION: último manda (hold tem prioridade sobre auto)
+        // ---------------------
+        // Rotation (hold > auto)
+        // ---------------------
         Dir rot = (holdRotate != Dir.None) ? holdRotate : autoRotate;
+
         if (rot == Dir.Right)
             currentModel.transform.Rotate(0f, rotationSpeedDegPerSec * Time.deltaTime, 0f, Space.World);
         else if (rot == Dir.Left)
             currentModel.transform.Rotate(0f, -rotationSpeedDegPerSec * Time.deltaTime, 0f, Space.World);
 
-        // ZOOM: último manda (hold)
-        Dir zoom = holdZoom;
-        if (zoom == Dir.Right) // Zoom In
+        // ---------------------
+        // Zoom (hold)
+        // ---------------------
+        if (holdZoom == Dir.Right) // Zoom In
             ApplyScaleDelta(+zoomSpeedPerSec * Time.deltaTime);
-        else if (zoom == Dir.Left) // Zoom Out
+        else if (holdZoom == Dir.Left) // Zoom Out
             ApplyScaleDelta(-zoomSpeedPerSec * Time.deltaTime);
     }
 
-    // --------------------
+    // =====================================================
     // Spawn
-    // --------------------
+    // =====================================================
     private void SpawnSelectedPrefab()
     {
         if (spawnPoint == null)
@@ -88,12 +131,13 @@ public class MainGameManager : MonoBehaviour
 
         GameObject prefab = lungPrefab;
 
-        // precisa do SelectedModel.cs (aquele static) criado antes
         switch (SelectedModel.Selected)
         {
-            case SelectedModel.Choice.Lung: prefab = lungPrefab; break;
+            case SelectedModel.Choice.Lung:     prefab = lungPrefab; break;
             case SelectedModel.Choice.Bronchus: prefab = bronchusPrefab; break;
             case SelectedModel.Choice.Alveolus: prefab = alveolusPrefab; break;
+            case SelectedModel.Choice.Trachea:  prefab = tracheaPrefab; break;
+            case SelectedModel.Choice.Heart:    prefab = heartPrefab; break;
         }
 
         if (prefab == null)
@@ -109,17 +153,17 @@ public class MainGameManager : MonoBehaviour
         if (currentAnimator != null) currentAnimator.speed = 1f;
     }
 
-    // --------------------
+    // =====================================================
     // Scene navigation
-    // --------------------
+    // =====================================================
     public void BackToMenu()
     {
         SceneManager.LoadScene(menuSceneIndex);
     }
 
-    // --------------------
+    // =====================================================
     // Options menu open/close
-    // --------------------
+    // =====================================================
     public void OpenOptionsMenu()
     {
         SetOptionsPanel(true);
@@ -143,9 +187,9 @@ public class MainGameManager : MonoBehaviour
         if (menuCloseButtonObj) menuCloseButtonObj.SetActive(isOpen);
     }
 
-    // --------------------
+    // =====================================================
     // Play / Pause animation toggle
-    // --------------------
+    // =====================================================
     public void PlayAnimation()
     {
         if (currentAnimator != null) currentAnimator.speed = 1f;
@@ -164,9 +208,9 @@ public class MainGameManager : MonoBehaviour
         if (pauseButtonObj) pauseButtonObj.SetActive(isPlaying);
     }
 
-    // --------------------
+    // =====================================================
     // Fullscreen toggle (Itch.io / WebGL)
-    // --------------------
+    // =====================================================
     public void FullscreenOn()
     {
         Screen.fullScreen = true;
@@ -185,9 +229,9 @@ public class MainGameManager : MonoBehaviour
         if (fullscreenOffButtonObj) fullscreenOffButtonObj.SetActive(isFullscreen);
     }
 
-    // --------------------
+    // =====================================================
     // Rotation controls (Hold + Double click auto)
-    // --------------------
+    // =====================================================
     public void HoldTurnRightStart() { holdRotate = Dir.Right; }
     public void HoldTurnRightEnd()   { if (holdRotate == Dir.Right) holdRotate = Dir.None; }
 
@@ -196,7 +240,6 @@ public class MainGameManager : MonoBehaviour
 
     public void ToggleAutoTurnRight()
     {
-        // se já estava em auto right, desliga; senão liga right (e substitui left)
         autoRotate = (autoRotate == Dir.Right) ? Dir.None : Dir.Right;
     }
 
@@ -205,13 +248,13 @@ public class MainGameManager : MonoBehaviour
         autoRotate = (autoRotate == Dir.Left) ? Dir.None : Dir.Left;
     }
 
-    // --------------------
+    // =====================================================
     // Zoom controls (Hold)
-    // --------------------
-    public void HoldZoomInStart()  { holdZoom = Dir.Right; lastZoom = Dir.Right; }
+    // =====================================================
+    public void HoldZoomInStart()  { holdZoom = Dir.Right; }
     public void HoldZoomInEnd()    { if (holdZoom == Dir.Right) holdZoom = Dir.None; }
 
-    public void HoldZoomOutStart() { holdZoom = Dir.Left; lastZoom = Dir.Left; }
+    public void HoldZoomOutStart() { holdZoom = Dir.Left; }
     public void HoldZoomOutEnd()   { if (holdZoom == Dir.Left) holdZoom = Dir.None; }
 
     private void ApplyScaleDelta(float delta)
@@ -219,5 +262,19 @@ public class MainGameManager : MonoBehaviour
         Vector3 s = currentModel.transform.localScale;
         float target = Mathf.Clamp(s.x + delta, minScale, maxScale);
         currentModel.transform.localScale = new Vector3(target, target, target);
+    }
+
+    // =====================================================
+    // Beacon Button (optional)
+    // =====================================================
+    public void OpenBeacon()
+    {
+        if (string.IsNullOrWhiteSpace(beaconUrl))
+        {
+            Debug.LogError("MainGameManager: beaconUrl está vazio. Preencha no Inspector.");
+            return;
+        }
+
+        Application.OpenURL(beaconUrl);
     }
 }
