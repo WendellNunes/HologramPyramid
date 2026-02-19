@@ -14,46 +14,41 @@ public class TutorialManager : MonoBehaviour
 {
     // =====================================================
     // SCENES
-    // Índices das cenas no Build Settings
     // =====================================================
     [Header("Scenes (Build Settings Index)")]
-    [SerializeField] private int titleSceneIndex = 1;  // volta pro menu principal
-    [SerializeField] private int startSceneIndex = 2;  // inicia o jogo após tutorial
+    [SerializeField] private int titleSceneIndex = 1;
+    [SerializeField] private int startSceneIndex = 2;
 
     // =====================================================
     // TUTORIAL PAGES
-    // Lista de imagens (sprites) do tutorial
     // =====================================================
     [Header("Tutorial Pages")]
-    [SerializeField] private Image tutorialImage; // UI Image que exibe o tutorial
-    [SerializeField] private Sprite[] pages;      // array com todas as páginas
+    [SerializeField] private Image tutorialImage;
+    [SerializeField] private Sprite[] pages;
 
     // =====================================================
     // BUTTONS
     // =====================================================
     [Header("Buttons")]
-    [SerializeField] private Button prevButton;   // botão voltar página
-    [SerializeField] private Button nextButton;   // botão próxima página
-    [SerializeField] private Button startButton;  // botão start (só última página)
-    [SerializeField] private float disabledAlpha = 0.35f; // transparência do botão desativado
+    [SerializeField] private Button backButton;  
+    [SerializeField] private Button prevButton;
+    [SerializeField] private Button nextButton;
+    [SerializeField] private Button startButton;
+    [SerializeField] private float disabledAlpha = 0.35f;
 
-    // =====================================================
-    // CONTROLE INTERNO
-    // Página atual do tutorial
-    // =====================================================
     private int index = 0;
 
-    // =====================================================
-    // START
-    // =====================================================
     private void Start()
     {
-        // segurança: verifica se existem páginas
         if (pages == null || pages.Length == 0)
         {
             Debug.LogError("TutorialManager: 'pages' está vazio. Adicione os sprites do tutorial no Inspector.");
             return;
         }
+
+        // Deixa o botão Back desabilitado (mas mantém a função no script)
+        if (backButton != null)
+            backButton.interactable = false;
 
         index = 0;
         UpdateUI();
@@ -69,10 +64,16 @@ public class TutorialManager : MonoBehaviour
 
     // =====================================================
     // PÁGINA ANTERIOR
+    // - Se estiver na primeira página, volta pro Title
     // =====================================================
     public void PrevPage()
     {
-        if (index <= 0) return;
+        if (index <= 0)
+        {
+            SceneManager.LoadScene(titleSceneIndex);
+            return;
+        }
+
         index--;
         UpdateUI();
     }
@@ -89,7 +90,6 @@ public class TutorialManager : MonoBehaviour
 
     // =====================================================
     // START GAME
-    // Só aparece na última página
     // =====================================================
     public void StartGame()
     {
@@ -98,39 +98,24 @@ public class TutorialManager : MonoBehaviour
 
     // =====================================================
     // UPDATE UI
-    // Atualiza imagem e botões
     // =====================================================
     private void UpdateUI()
     {
-        // atualiza imagem atual
         tutorialImage.sprite = pages[index];
 
-        bool isFirst = (index == 0);
-        bool isLast  = (index == pages.Length - 1);
+        bool isLast = (index == pages.Length - 1);
 
-        // -------------------------
-        // BOTÃO VOLTAR (tutorial)
-        // -------------------------
-        prevButton.interactable = !isFirst;
+        // PREV agora sempre fica habilitado (porque no 1º sprite ele volta pro Title)
+        prevButton.interactable = true;
 
-        // -------------------------
-        // BOTÃO NEXT
-        // Desativa na última página
-        // -------------------------
+        // NEXT desativa na última
         nextButton.interactable = !isLast;
         SetButtonAlpha(nextButton, isLast ? disabledAlpha : 1f);
 
-        // -------------------------
-        // BOTÃO START
-        // Só aparece na última
-        // -------------------------
+        // START só na última
         startButton.gameObject.SetActive(isLast);
     }
 
-    // =====================================================
-    // SET BUTTON ALPHA
-    // Ajusta transparência visual do botão
-    // =====================================================
     private void SetButtonAlpha(Button btn, float a)
     {
         var g = btn.targetGraphic;

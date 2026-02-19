@@ -17,7 +17,7 @@ public class MainGameManager : MonoBehaviour
     // =====================================================
     // Spawn
     // (Adicionamos Trachea e Heart)
-// =====================================================
+    // =====================================================
     [Header("Spawn")]
     [SerializeField] private Transform spawnPoint;
 
@@ -47,6 +47,23 @@ public class MainGameManager : MonoBehaviour
     [SerializeField] private GameObject fullscreenOffButtonObj;
 
     // =====================================================
+    // Lighting (3 modos no mesmo lugar)
+    // Default: só Superior + Inferior
+    // All: Superior + Inferior + luzes perto das câmeras (N/S/L/O)
+    // Off: tudo desligado
+    // =====================================================
+    [Header("Lighting")]
+    [SerializeField] private Light topLight;
+    [SerializeField] private Light bottomLight;
+    [Tooltip("Luzes próximas às câmeras (Norte, Sul, Leste, Oeste)")]
+    [SerializeField] private Light[] cameraLights;
+
+    [Header("Lighting Buttons (mesmo lugar)")]
+    [SerializeField] private GameObject lightsOffButtonObj;      // botão que desliga tudo
+    [SerializeField] private GameObject lightsDefaultButtonObj;  // botão que volta pro padrão (2)
+    [SerializeField] private GameObject lightsAllButtonObj;      // botão que liga todas (6)
+
+    // =====================================================
     // Rotation
     // =====================================================
     [Header("Rotation")]
@@ -62,7 +79,6 @@ public class MainGameManager : MonoBehaviour
 
     // =====================================================
     // Beacon (opcional também na cena principal)
-    // Se quiser colocar o botão aqui também, já está pronto.
     // =====================================================
     [Header("Beacon URL (optional)")]
     [SerializeField] private string beaconUrl = "https://SEU_LINK_AQUI";
@@ -77,10 +93,14 @@ public class MainGameManager : MonoBehaviour
     // Input state
     // =====================================================
     private enum Dir { None, Left, Right }
+    private enum LightMode { Off, Default, All }
+
     private Dir holdRotate = Dir.None;
     private Dir autoRotate = Dir.None;
 
     private Dir holdZoom = Dir.None; // Left = ZoomOut, Right = ZoomIn
+
+    private LightMode currentLightMode = LightMode.Default;
 
     // =====================================================
     // Unity lifecycle
@@ -93,6 +113,9 @@ public class MainGameManager : MonoBehaviour
 
         SetPlayPause(isPlaying: true);
         SetFullscreenToggle(isFullscreen: Screen.fullScreen);
+
+        // Luzes: por padrão, Superior + Inferior
+        SetLightMode(LightMode.Default);
     }
 
     private void Update()
@@ -262,6 +285,72 @@ public class MainGameManager : MonoBehaviour
         Vector3 s = currentModel.transform.localScale;
         float target = Mathf.Clamp(s.x + delta, minScale, maxScale);
         currentModel.transform.localScale = new Vector3(target, target, target);
+    }
+
+    // =====================================================
+    // Lighting controls (3 botões no mesmo lugar)
+    // Sequência: Default (2) -> All (6) -> Off (0) -> Default...
+    // =====================================================
+    public void LightsOff()
+    {
+        SetLightMode(LightMode.Off);
+    }
+
+    public void LightsDefault()
+    {
+        SetLightMode(LightMode.Default);
+    }
+
+    public void LightsAll()
+    {
+        SetLightMode(LightMode.All);
+    }
+
+    private void SetLightMode(LightMode mode)
+    {
+        currentLightMode = mode;
+
+        bool topOn = (mode == LightMode.Default || mode == LightMode.All);
+        bool bottomOn = (mode == LightMode.Default || mode == LightMode.All);
+        bool camsOn = (mode == LightMode.All);
+
+        if (topLight) topLight.enabled = topOn;
+        if (bottomLight) bottomLight.enabled = bottomOn;
+
+        if (cameraLights != null)
+        {
+            for (int i = 0; i < cameraLights.Length; i++)
+            {
+                if (cameraLights[i]) cameraLights[i].enabled = camsOn;
+            }
+        }
+
+        SetLightingButtons(mode);
+    }
+
+    private void SetLightingButtons(LightMode mode)
+    {
+        // Só 1 botão aparece por vez (mesmo lugar), seguindo a sequência:
+        // Default (2 luzes) -> All (6 luzes) -> Off (tudo) -> Default...
+        if (lightsOffButtonObj)     lightsOffButtonObj.SetActive(false);
+        if (lightsDefaultButtonObj) lightsDefaultButtonObj.SetActive(false);
+        if (lightsAllButtonObj)     lightsAllButtonObj.SetActive(false);
+
+        if (mode == LightMode.Default)
+        {
+            // próximo clique: ligar todas (6)
+            if (lightsAllButtonObj) lightsAllButtonObj.SetActive(true);
+        }
+        else if (mode == LightMode.All)
+        {
+            // próximo clique: desligar tudo
+            if (lightsOffButtonObj) lightsOffButtonObj.SetActive(true);
+        }
+        else // Off
+        {
+            // próximo clique: voltar pro padrão (2)
+            if (lightsDefaultButtonObj) lightsDefaultButtonObj.SetActive(true);
+        }
     }
 
     // =====================================================

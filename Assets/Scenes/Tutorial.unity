@@ -416,7 +416,12 @@ MonoBehaviour:
   titleSceneIndex: 1
   startSceneIndex: 2
   tutorialImage: {fileID: 1131578612}
-  pages: []
+  pages:
+  - {fileID: 21300000, guid: 17f5f73f32f34bc48a91ac84febdb1f8, type: 3}
+  - {fileID: 21300000, guid: 0dfa15b20cc8c414aa4ac10e95c11168, type: 3}
+  - {fileID: 21300000, guid: 538597f79b232b34d9735b0f3c522725, type: 3}
+  - {fileID: 21300000, guid: 9d5a6910541bd1c4381c8562c2a4c5f5, type: 3}
+  backButton: {fileID: 0}
   prevButton: {fileID: 1113717387}
   nextButton: {fileID: 229619164}
   startButton: {fileID: 54905541}
@@ -660,7 +665,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1113717386
 RectTransform:
   m_ObjectHideFlags: 0
@@ -824,7 +829,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0, b: 0, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
