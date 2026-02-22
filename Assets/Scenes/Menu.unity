@@ -1088,8 +1088,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 591ab29885cf0544f84ae692ba26be1e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  titleSceneIndex: 1
-  mainSceneIndex: 4
+  titleSceneIndex: 0
+  mainSceneIndex: 3
   beaconUrl: https://beacons.ai/prefablabs
 --- !u!4 &1311391935
 Transform:

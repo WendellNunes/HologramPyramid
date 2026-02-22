@@ -413,8 +413,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 038afc40e8a1b0a4b88a19955d966df0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  titleSceneIndex: 1
-  startSceneIndex: 2
+  titleSceneIndex: 0
+  startSceneIndex: 3
   tutorialImage: {fileID: 1131578612}
   pages:
   - {fileID: 21300000, guid: 17f5f73f32f34bc48a91ac84febdb1f8, type: 3}

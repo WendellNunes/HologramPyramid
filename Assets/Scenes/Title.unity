@@ -227,8 +227,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c9ae65fc6922f964d8a1a8bdde1f62ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  gameSceneIndex: 2
-  tutorialSceneIndex: 3
+  gameSceneIndex: 1
+  tutorialSceneIndex: 2
   instagramURL: https://www.instagram.com/prefablabs?igsh=eXRpZTNtcXE2d2py
   tiktokURL: https://www.tiktok.com/@prefab_labs?_r=1&_t=ZS-93whwY5EN0B
   facebookURL: https://www.facebook.com/share/1Btz7fCjxQ/

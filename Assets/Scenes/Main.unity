@@ -3043,7 +3043,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 02660fce1ca799741aafdcd2b435adf9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MainGameManager
-  menuSceneIndex: 2
+  menuSceneIndex: 1
   spawnPoint: {fileID: 1788555634}
   lungPrefab: {fileID: 1514396560209066122, guid: f64088c9a27806e4cab722adb1e24a57, type: 3}
   bronchusPrefab: {fileID: 5650721131036260222, guid: c38c20747148e7f47867831e65015b3c, type: 3}
