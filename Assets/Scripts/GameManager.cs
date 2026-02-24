@@ -3,20 +3,20 @@ using UnityEngine.SceneManagement;
 
 // =====================================================
 // MainGameManager.cs
-// Controla a cena principal: spawn do modelo, rotação, zoom, play/pause, fullscreen.
+// Versão Final Estável
+// Touch + Teclado + Mouse + WebGL + Mobile
 // =====================================================
 
 public class MainGameManager : MonoBehaviour
 {
     // =====================================================
-    // Scenes (Build Settings Index)
+    // Scenes
     // =====================================================
-    [Header("Scenes (Build Settings Index)")]
-    [SerializeField] private int menuSceneIndex = 2; // índice do MENU
+    [Header("Scenes")]
+    [SerializeField] private int menuSceneIndex = 2;
 
     // =====================================================
     // Spawn
-    // (Adicionamos Trachea e Heart)
     // =====================================================
     [Header("Spawn")]
     [SerializeField] private Transform spawnPoint;
@@ -28,40 +28,28 @@ public class MainGameManager : MonoBehaviour
     [SerializeField] private GameObject heartPrefab;
 
     // =====================================================
-    // UI Panels
+    // UI
     // =====================================================
-    [Header("UI Panels")]
+    [Header("UI")]
     [SerializeField] private GameObject optionsPanel;
 
-    // =====================================================
-    // Toggle Buttons
-    // =====================================================
-    [Header("Toggle Buttons (mesmo lugar)")]
     [SerializeField] private GameObject menuOpenButtonObj;
     [SerializeField] private GameObject menuCloseButtonObj;
 
     [SerializeField] private GameObject playButtonObj;
     [SerializeField] private GameObject pauseButtonObj;
 
-    [SerializeField] private GameObject fullscreenOnButtonObj;
-    [SerializeField] private GameObject fullscreenOffButtonObj;
-
     // =====================================================
-    // Lighting (3 modos no mesmo lugar)
-    // Default: só Superior + Inferior
-    // All: Superior + Inferior + luzes perto das câmeras (N/S/L/O)
-    // Off: tudo desligado
+    // Lighting
     // =====================================================
     [Header("Lighting")]
     [SerializeField] private Light topLight;
     [SerializeField] private Light bottomLight;
-    [Tooltip("Luzes próximas às câmeras (Norte, Sul, Leste, Oeste)")]
     [SerializeField] private Light[] cameraLights;
 
-    [Header("Lighting Buttons (mesmo lugar)")]
-    [SerializeField] private GameObject lightsOffButtonObj;      // botão que desliga tudo
-    [SerializeField] private GameObject lightsDefaultButtonObj;  // botão que volta pro padrão (2)
-    [SerializeField] private GameObject lightsAllButtonObj;      // botão que liga todas (6)
+    [SerializeField] private GameObject lightsOffButtonObj;
+    [SerializeField] private GameObject lightsDefaultButtonObj;
+    [SerializeField] private GameObject lightsAllButtonObj;
 
     // =====================================================
     // Rotation
@@ -73,48 +61,42 @@ public class MainGameManager : MonoBehaviour
     // Zoom
     // =====================================================
     [Header("Zoom")]
-    [SerializeField] private float zoomSpeedPerSec = 0.6f;
+    [SerializeField] private float zoomSpeedPerSec = 0.8f;
     [SerializeField] private float minScale = 0.2f;
-    [SerializeField] private float maxScale = 3.0f;
+    [SerializeField] private float maxScale = 3f;
 
     // =====================================================
-    // Beacon (opcional também na cena principal)
-    // =====================================================
-    [Header("Beacon URL (optional)")]
-    [SerializeField] private string beaconUrl = "https://SEU_LINK_AQUI";
-
-    // =====================================================
-    // Runtime refs
+    // Runtime
     // =====================================================
     private GameObject currentModel;
     private Animator currentAnimator;
 
-    // =====================================================
-    // Input state
-    // =====================================================
     private enum Dir { None, Left, Right }
     private enum LightMode { Off, Default, All }
 
     private Dir holdRotate = Dir.None;
     private Dir autoRotate = Dir.None;
-
-    private Dir holdZoom = Dir.None; // Left = ZoomOut, Right = ZoomIn
+    private Dir holdZoom = Dir.None;
 
     private LightMode currentLightMode = LightMode.Default;
 
+    private float lastRightKeyTime;
+    private float lastLeftKeyTime;
+    private float doubleClickThreshold = 0.35f;
+
+    private Vector3 defaultScale = Vector3.one;
+
     // =====================================================
-    // Unity lifecycle
+    // UNITY
     // =====================================================
     private void Start()
     {
         SpawnSelectedPrefab();
-        SetOptionsPanel(false);
-        SetMenuToggle(isOpen: false);
 
-        SetPlayPause(isPlaying: true);
-        SetFullscreenToggle(isFullscreen: Screen.fullScreen);
+        if (optionsPanel) optionsPanel.SetActive(false);
+        SetMenuToggle(false);
+        SetPlayPause(true);
 
-        // Luzes: por padrão, Superior + Inferior
         SetLightMode(LightMode.Default);
     }
 
@@ -122,163 +104,115 @@ public class MainGameManager : MonoBehaviour
     {
         if (currentModel == null) return;
 
-        // ---------------------
-        // Rotation (hold > auto)
-        // ---------------------
-        Dir rot = (holdRotate != Dir.None) ? holdRotate : autoRotate;
+        HandleKeyboard();
+        HandleRotation();
+        HandleZoom();
+    }
 
-        if (rot == Dir.Right)
-            currentModel.transform.Rotate(0f, rotationSpeedDegPerSec * Time.deltaTime, 0f, Space.World);
-        else if (rot == Dir.Left)
-            currentModel.transform.Rotate(0f, -rotationSpeedDegPerSec * Time.deltaTime, 0f, Space.World);
+    // =====================================================
+    // KEYBOARD
+    // =====================================================
+    private void HandleKeyboard()
+    {
+        // Play / Pause
+        if (Input.GetKeyDown(KeyCode.P))
+        {
+            if (currentAnimator && currentAnimator.speed > 0)
+                PauseAnimation();
+            else
+                PlayAnimation();
+        }
 
-        // ---------------------
-        // Zoom (hold)
-        // ---------------------
-        if (holdZoom == Dir.Right) // Zoom In
+        // Menu
+        if (Input.GetKeyDown(KeyCode.M))
+        {
+            if (optionsPanel && optionsPanel.activeSelf)
+                CloseOptionsMenu();
+            else
+                OpenOptionsMenu();
+        }
+
+        // Light cycle
+        if (Input.GetKeyDown(KeyCode.L))
+            CycleLightMode();
+
+        // Double click RIGHT
+        if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow))
+        {
+            if (Time.time - lastRightKeyTime < doubleClickThreshold)
+                ToggleAutoRotate(Dir.Right);
+
+            lastRightKeyTime = Time.time;
+        }
+
+        // Double click LEFT
+        if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow))
+        {
+            if (Time.time - lastLeftKeyTime < doubleClickThreshold)
+                ToggleAutoRotate(Dir.Left);
+
+            lastLeftKeyTime = Time.time;
+        }
+    }
+
+    // =====================================================
+    // ROTATION (Touch tem prioridade)
+    // =====================================================
+    private void HandleRotation()
+    {
+        Dir keyboardDir = Dir.None;
+
+        if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow))
+            keyboardDir = Dir.Right;
+        else if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow))
+            keyboardDir = Dir.Left;
+
+        Dir finalDir =
+            holdRotate != Dir.None ? holdRotate :
+            keyboardDir != Dir.None ? keyboardDir :
+            autoRotate;
+
+        if (finalDir == Dir.Right)
+            currentModel.transform.Rotate(0, rotationSpeedDegPerSec * Time.deltaTime, 0, Space.World);
+        else if (finalDir == Dir.Left)
+            currentModel.transform.Rotate(0, -rotationSpeedDegPerSec * Time.deltaTime, 0, Space.World);
+    }
+
+    private void ToggleAutoRotate(Dir dir)
+    {
+        autoRotate = (autoRotate == dir) ? Dir.None : dir;
+    }
+
+    // =====================================================
+    // ZOOM (Touch prioridade)
+    // =====================================================
+    private void HandleZoom()
+    {
+        Dir keyboardZoom = Dir.None;
+
+        if (Input.GetKey(KeyCode.W))
+            keyboardZoom = Dir.Right;
+        else if (Input.GetKey(KeyCode.S))
+            keyboardZoom = Dir.Left;
+
+        // Scroll
+        float scroll = Input.mouseScrollDelta.y;
+        if (scroll > 0) ApplyScaleDelta(+zoomSpeedPerSec * 5f * Time.deltaTime);
+        if (scroll < 0) ApplyScaleDelta(-zoomSpeedPerSec * 5f * Time.deltaTime);
+
+        // Scroll click reset
+        if (Input.GetMouseButtonDown(2))
+            currentModel.transform.localScale = defaultScale;
+
+        Dir finalZoom =
+            holdZoom != Dir.None ? holdZoom :
+            keyboardZoom;
+
+        if (finalZoom == Dir.Right)
             ApplyScaleDelta(+zoomSpeedPerSec * Time.deltaTime);
-        else if (holdZoom == Dir.Left) // Zoom Out
+        else if (finalZoom == Dir.Left)
             ApplyScaleDelta(-zoomSpeedPerSec * Time.deltaTime);
     }
-
-    // =====================================================
-    // Spawn
-    // =====================================================
-    private void SpawnSelectedPrefab()
-    {
-        if (spawnPoint == null)
-        {
-            Debug.LogError("MainGameManager: spawnPoint não foi setado.");
-            return;
-        }
-
-        GameObject prefab = lungPrefab;
-
-        switch (SelectedModel.Selected)
-        {
-            case SelectedModel.Choice.Lung:     prefab = lungPrefab; break;
-            case SelectedModel.Choice.Bronchus: prefab = bronchusPrefab; break;
-            case SelectedModel.Choice.Alveolus: prefab = alveolusPrefab; break;
-            case SelectedModel.Choice.Trachea:  prefab = tracheaPrefab; break;
-            case SelectedModel.Choice.Heart:    prefab = heartPrefab; break;
-        }
-
-        if (prefab == null)
-        {
-            Debug.LogError("MainGameManager: prefab selecionado está NULL no Inspector.");
-            return;
-        }
-
-        currentModel = Instantiate(prefab, spawnPoint.position, spawnPoint.rotation);
-        currentModel.transform.localScale = Vector3.one;
-
-        currentAnimator = currentModel.GetComponentInChildren<Animator>();
-        if (currentAnimator != null) currentAnimator.speed = 1f;
-    }
-
-    // =====================================================
-    // Scene navigation
-    // =====================================================
-    public void BackToMenu()
-    {
-        SceneManager.LoadScene(menuSceneIndex);
-    }
-
-    // =====================================================
-    // Options menu open/close
-    // =====================================================
-    public void OpenOptionsMenu()
-    {
-        SetOptionsPanel(true);
-        SetMenuToggle(isOpen: true);
-    }
-
-    public void CloseOptionsMenu()
-    {
-        SetOptionsPanel(false);
-        SetMenuToggle(isOpen: false);
-    }
-
-    private void SetOptionsPanel(bool open)
-    {
-        if (optionsPanel != null) optionsPanel.SetActive(open);
-    }
-
-    private void SetMenuToggle(bool isOpen)
-    {
-        if (menuOpenButtonObj) menuOpenButtonObj.SetActive(!isOpen);
-        if (menuCloseButtonObj) menuCloseButtonObj.SetActive(isOpen);
-    }
-
-    // =====================================================
-    // Play / Pause animation toggle
-    // =====================================================
-    public void PlayAnimation()
-    {
-        if (currentAnimator != null) currentAnimator.speed = 1f;
-        SetPlayPause(isPlaying: true);
-    }
-
-    public void PauseAnimation()
-    {
-        if (currentAnimator != null) currentAnimator.speed = 0f;
-        SetPlayPause(isPlaying: false);
-    }
-
-    private void SetPlayPause(bool isPlaying)
-    {
-        if (playButtonObj) playButtonObj.SetActive(!isPlaying);
-        if (pauseButtonObj) pauseButtonObj.SetActive(isPlaying);
-    }
-
-    // =====================================================
-    // Fullscreen toggle (Itch.io / WebGL)
-    // =====================================================
-    public void FullscreenOn()
-    {
-        Screen.fullScreen = true;
-        SetFullscreenToggle(isFullscreen: true);
-    }
-
-    public void FullscreenOff()
-    {
-        Screen.fullScreen = false;
-        SetFullscreenToggle(isFullscreen: false);
-    }
-
-    private void SetFullscreenToggle(bool isFullscreen)
-    {
-        if (fullscreenOnButtonObj) fullscreenOnButtonObj.SetActive(!isFullscreen);
-        if (fullscreenOffButtonObj) fullscreenOffButtonObj.SetActive(isFullscreen);
-    }
-
-    // =====================================================
-    // Rotation controls (Hold + Double click auto)
-    // =====================================================
-    public void HoldTurnRightStart() { holdRotate = Dir.Right; }
-    public void HoldTurnRightEnd()   { if (holdRotate == Dir.Right) holdRotate = Dir.None; }
-
-    public void HoldTurnLeftStart()  { holdRotate = Dir.Left; }
-    public void HoldTurnLeftEnd()    { if (holdRotate == Dir.Left) holdRotate = Dir.None; }
-
-    public void ToggleAutoTurnRight()
-    {
-        autoRotate = (autoRotate == Dir.Right) ? Dir.None : Dir.Right;
-    }
-
-    public void ToggleAutoTurnLeft()
-    {
-        autoRotate = (autoRotate == Dir.Left) ? Dir.None : Dir.Left;
-    }
-
-    // =====================================================
-    // Zoom controls (Hold)
-    // =====================================================
-    public void HoldZoomInStart()  { holdZoom = Dir.Right; }
-    public void HoldZoomInEnd()    { if (holdZoom == Dir.Right) holdZoom = Dir.None; }
-
-    public void HoldZoomOutStart() { holdZoom = Dir.Left; }
-    public void HoldZoomOutEnd()   { if (holdZoom == Dir.Left) holdZoom = Dir.None; }
 
     private void ApplyScaleDelta(float delta)
     {
@@ -288,82 +222,167 @@ public class MainGameManager : MonoBehaviour
     }
 
     // =====================================================
-    // Lighting controls (3 botões no mesmo lugar)
-    // Sequência: Default (2) -> All (6) -> Off (0) -> Default...
+    // SPAWN
     // =====================================================
-    public void LightsOff()
+    private void SpawnSelectedPrefab()
     {
-        SetLightMode(LightMode.Off);
+        if (!spawnPoint) return;
+
+        GameObject prefab = lungPrefab;
+
+        switch (SelectedModel.Selected)
+        {
+            case SelectedModel.Choice.Lung: prefab = lungPrefab; break;
+            case SelectedModel.Choice.Bronchus: prefab = bronchusPrefab; break;
+            case SelectedModel.Choice.Alveolus: prefab = alveolusPrefab; break;
+            case SelectedModel.Choice.Trachea: prefab = tracheaPrefab; break;
+            case SelectedModel.Choice.Heart: prefab = heartPrefab; break;
+        }
+
+        if (!prefab) return;
+
+        currentModel = Instantiate(prefab, spawnPoint.position, spawnPoint.rotation);
+        currentModel.transform.localScale = defaultScale;
+
+        currentAnimator = currentModel.GetComponentInChildren<Animator>();
+        if (currentAnimator) currentAnimator.speed = 1f;
     }
 
-    public void LightsDefault()
+    // =====================================================
+    // TOUCH METHODS
+    // =====================================================
+    public void HoldTurnRightStart() { holdRotate = Dir.Right; }
+    public void HoldTurnRightEnd() { if (holdRotate == Dir.Right) holdRotate = Dir.None; }
+
+    public void HoldTurnLeftStart() { holdRotate = Dir.Left; }
+    public void HoldTurnLeftEnd() { if (holdRotate == Dir.Left) holdRotate = Dir.None; }
+
+    public void HoldZoomInStart() { holdZoom = Dir.Right; }
+    public void HoldZoomInEnd() { if (holdZoom == Dir.Right) holdZoom = Dir.None; }
+
+    public void HoldZoomOutStart() { holdZoom = Dir.Left; }
+    public void HoldZoomOutEnd() { if (holdZoom == Dir.Left) holdZoom = Dir.None; }
+
+    // =====================================================
+    // AUTO ROTATE (Touch Toggle)
+    // =====================================================
+    public void ToggleAutoTurnRight()
     {
-        SetLightMode(LightMode.Default);
+    autoRotate = (autoRotate == Dir.Right) ? Dir.None : Dir.Right;
     }
 
-    public void LightsAll()
+    public void ToggleAutoTurnLeft()
     {
+    autoRotate = (autoRotate == Dir.Left) ? Dir.None : Dir.Left;
+    }
+
+  // =====================================================
+// LIGHTING (modo ciclo com botão único)
+// =====================================================
+public void LightsOff()
+{
+    SetLightMode(LightMode.Off);
+}
+
+public void LightsDefault()
+{
+    SetLightMode(LightMode.Default);
+}
+
+public void LightsAll()
+{
+    SetLightMode(LightMode.All);
+}
+
+private void CycleLightMode()
+{
+    if (currentLightMode == LightMode.Default)
         SetLightMode(LightMode.All);
+    else if (currentLightMode == LightMode.All)
+        SetLightMode(LightMode.Off);
+    else
+        SetLightMode(LightMode.Default);
+}
+
+private void SetLightMode(LightMode mode)
+{
+    currentLightMode = mode;
+
+    bool topOn = (mode == LightMode.Default || mode == LightMode.All);
+    bool bottomOn = (mode == LightMode.Default || mode == LightMode.All);
+    bool camsOn = (mode == LightMode.All);
+
+    if (topLight) topLight.enabled = topOn;
+    if (bottomLight) bottomLight.enabled = bottomOn;
+
+    if (cameraLights != null)
+        foreach (var l in cameraLights)
+            if (l) l.enabled = camsOn;
+
+    SetLightingButtons(mode);
+}
+
+private void SetLightingButtons(LightMode mode)
+{
+    if (lightsOffButtonObj) lightsOffButtonObj.SetActive(false);
+    if (lightsDefaultButtonObj) lightsDefaultButtonObj.SetActive(false);
+    if (lightsAllButtonObj) lightsAllButtonObj.SetActive(false);
+
+    if (mode == LightMode.Default)
+    {
+        if (lightsAllButtonObj) lightsAllButtonObj.SetActive(true);
+    }
+    else if (mode == LightMode.All)
+    {
+        if (lightsOffButtonObj) lightsOffButtonObj.SetActive(true);
+    }
+    else
+    {
+        if (lightsDefaultButtonObj) lightsDefaultButtonObj.SetActive(true);
+    }
+}
+
+    // =====================================================
+    // MENU
+    // =====================================================
+    public void BackToMenu() => SceneManager.LoadScene(menuSceneIndex);
+
+    public void OpenOptionsMenu()
+    {
+        if (optionsPanel) optionsPanel.SetActive(true);
+        SetMenuToggle(true);
     }
 
-    private void SetLightMode(LightMode mode)
+    public void CloseOptionsMenu()
     {
-        currentLightMode = mode;
-
-        bool topOn = (mode == LightMode.Default || mode == LightMode.All);
-        bool bottomOn = (mode == LightMode.Default || mode == LightMode.All);
-        bool camsOn = (mode == LightMode.All);
-
-        if (topLight) topLight.enabled = topOn;
-        if (bottomLight) bottomLight.enabled = bottomOn;
-
-        if (cameraLights != null)
-        {
-            for (int i = 0; i < cameraLights.Length; i++)
-            {
-                if (cameraLights[i]) cameraLights[i].enabled = camsOn;
-            }
-        }
-
-        SetLightingButtons(mode);
+        if (optionsPanel) optionsPanel.SetActive(false);
+        SetMenuToggle(false);
     }
 
-    private void SetLightingButtons(LightMode mode)
+    private void SetMenuToggle(bool isOpen)
     {
-        // Só 1 botão aparece por vez (mesmo lugar), seguindo a sequência:
-        // Default (2 luzes) -> All (6 luzes) -> Off (tudo) -> Default...
-        if (lightsOffButtonObj)     lightsOffButtonObj.SetActive(false);
-        if (lightsDefaultButtonObj) lightsDefaultButtonObj.SetActive(false);
-        if (lightsAllButtonObj)     lightsAllButtonObj.SetActive(false);
-
-        if (mode == LightMode.Default)
-        {
-            // próximo clique: ligar todas (6)
-            if (lightsAllButtonObj) lightsAllButtonObj.SetActive(true);
-        }
-        else if (mode == LightMode.All)
-        {
-            // próximo clique: desligar tudo
-            if (lightsOffButtonObj) lightsOffButtonObj.SetActive(true);
-        }
-        else // Off
-        {
-            // próximo clique: voltar pro padrão (2)
-            if (lightsDefaultButtonObj) lightsDefaultButtonObj.SetActive(true);
-        }
+        if (menuOpenButtonObj) menuOpenButtonObj.SetActive(!isOpen);
+        if (menuCloseButtonObj) menuCloseButtonObj.SetActive(isOpen);
     }
 
     // =====================================================
-    // Beacon Button (optional)
+    // PLAY / PAUSE
     // =====================================================
-    public void OpenBeacon()
+    public void PlayAnimation()
     {
-        if (string.IsNullOrWhiteSpace(beaconUrl))
-        {
-            Debug.LogError("MainGameManager: beaconUrl está vazio. Preencha no Inspector.");
-            return;
-        }
+        if (currentAnimator) currentAnimator.speed = 1f;
+        SetPlayPause(true);
+    }
 
-        Application.OpenURL(beaconUrl);
+    public void PauseAnimation()
+    {
+        if (currentAnimator) currentAnimator.speed = 0f;
+        SetPlayPause(false);
+    }
+
+    private void SetPlayPause(bool isPlaying)
+    {
+        if (playButtonObj) playButtonObj.SetActive(!isPlaying);
+        if (pauseButtonObj) pauseButtonObj.SetActive(isPlaying);
     }
 }
