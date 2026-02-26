@@ -3,62 +3,68 @@ using UnityEngine.Events;
 using UnityEngine.EventSystems;
 
 // =====================================================
-// HoldButton.cs
-// Script para botões da UI que detectam:
-// - Segurar pressionado (hold)
-// - Soltar (end hold)
-// - Duplo clique
-//
-// Usado para:
-// rotação contínua, zoom contínuo e auto-rotação.
+// HoldButton.cs (CORRIGIDO para MOBILE)
+// - Hold (PointerDown / PointerUp)  
+// - Double click no PC (clickCount) 
+// - Double tap no MOBILE por tempo 
 // =====================================================
 
 public class HoldButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerClickHandler
 {
-    // =====================================================
-    // HOLD EVENTS
-    // Chamados quando segura e quando solta o botão
-    // =====================================================
     [Header("Hold")]
     public UnityEvent onHoldStart; // quando começa a segurar
     public UnityEvent onHoldEnd;   // quando solta
 
-    // =====================================================
-    // DOUBLE CLICK EVENT
-    // Chamado quando dá duplo clique no botão
-    // =====================================================
     [Header("Double Click")]
     public UnityEvent onDoubleClick;
 
-    // =====================================================
-    // Pointer Down
-    // Quando o dedo/mouse pressiona o botão
-    // =====================================================
+    [Header("Mobile Double Tap")]
+    [Tooltip("Tempo máximo entre dois taps para contar como duplo toque (mobile)")]
+    public float maxDelay = 0.30f;
+
+    private float lastTapTime = -10f;
+    private int tapCount = 0;
+
     public void OnPointerDown(PointerEventData eventData)
     {
-        // dispara evento de segurar
         onHoldStart?.Invoke();
     }
 
-    // =====================================================
-    // Pointer Up
-    // Quando solta o botão
-    // =====================================================
     public void OnPointerUp(PointerEventData eventData)
     {
-        // dispara evento de parar de segurar
         onHoldEnd?.Invoke();
     }
 
-    // =====================================================
-    // Pointer Click
-    // Detecta clique e duplo clique
-    // =====================================================
     public void OnPointerClick(PointerEventData eventData)
     {
-        // Unity já conta número de cliques automaticamente
-        // Se >= 2 → duplo clique
-        if (eventData.clickCount >= 2)
+        // 1) PC / Mouse: se o Unity reportar clickCount >= 2, usa isso
+        if (eventData != null && eventData.clickCount >= 2)
+        {
             onDoubleClick?.Invoke();
+            ResetTap();
+            return;
+        }
+
+        // 2) Mobile / Touch: detecta double tap por tempo
+        float now = Time.unscaledTime;
+
+        if (now - lastTapTime <= maxDelay)
+            tapCount++;
+        else
+            tapCount = 1;
+
+        lastTapTime = now;
+
+        if (tapCount >= 2)
+        {
+            onDoubleClick?.Invoke();
+            ResetTap();
+        }
+    }
+
+    private void ResetTap()
+    {
+        tapCount = 0;
+        lastTapTime = -10f;
     }
 }

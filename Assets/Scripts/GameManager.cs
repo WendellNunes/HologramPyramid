@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.EventSystems;
+using UnityEngine.Events;
 
 // =====================================================
 // MainGameManager.cs
@@ -268,12 +270,12 @@ public class MainGameManager : MonoBehaviour
     // =====================================================
     public void ToggleAutoTurnRight()
     {
-    autoRotate = (autoRotate == Dir.Right) ? Dir.None : Dir.Right;
+        autoRotate = (autoRotate == Dir.Right) ? Dir.None : Dir.Right;
     }
 
     public void ToggleAutoTurnLeft()
     {
-    autoRotate = (autoRotate == Dir.Left) ? Dir.None : Dir.Left;
+        autoRotate = (autoRotate == Dir.Left) ? Dir.None : Dir.Left;
     }
 
   // =====================================================
@@ -384,5 +386,44 @@ private void SetLightingButtons(LightMode mode)
     {
         if (playButtonObj) playButtonObj.SetActive(!isPlaying);
         if (pauseButtonObj) pauseButtonObj.SetActive(isPlaying);
+    }
+}
+// =====================================================
+// DoubleTapDetector.cs (pode ficar no mesmo arquivo)
+// Resolve: double tap no MOBILE não virar "double click"
+// Como usar:
+// 1) Adicione este componente no botão (RotationRight/RotationLeft)
+// 2) No Inspector, em "On Double Tap", arraste o objeto do MainGameManager
+// 3) Selecione: ToggleAutoTurnRight() ou ToggleAutoTurnLeft()
+// IMPORTANTE: deixe o Button->OnClick vazio para não conflitar com o Hold.
+// =====================================================
+
+public class DoubleTapDetector : MonoBehaviour, IPointerClickHandler
+{
+    [Tooltip("Tempo máximo entre dois taps/cliques para contar como double tap")]
+    public float maxDelay = 0.30f;
+
+    [Tooltip("Dispara quando detectar double tap/clique")]
+    public UnityEvent onDoubleTap;
+
+    private float lastTapTime = -10f;
+    private int tapCount = 0;
+
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        float now = Time.unscaledTime; // funciona mesmo se Time.timeScale = 0
+
+        if (now - lastTapTime <= maxDelay)
+            tapCount++;
+        else
+            tapCount = 1;
+
+        lastTapTime = now;
+
+        if (tapCount >= 2)
+        {
+            tapCount = 0;
+            onDoubleTap?.Invoke();
+        }
     }
 }
