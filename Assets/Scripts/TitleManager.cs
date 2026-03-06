@@ -1,88 +1,66 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
-
-// =====================================================
-// TitleMenu.cs
-// Controla o menu principal (Title Screen):
-// - Iniciar jogo
-// - Abrir tutorial
-// - Abrir redes sociais
-// =====================================================
+using UnityEngine.UI;
 
 public class TitleMenu : MonoBehaviour
 {
-    // =====================================================
-    // SCENES
-    // Índices configurados no Build Settings
-    // =====================================================
     [Header("Scenes")]
-    [SerializeField] private int gameSceneIndex = 2;       // Cena principal do jogo
-    [SerializeField] private int tutorialSceneIndex = 3;   // Cena tutorial
+    [SerializeField] private int gameSceneIndex = 2;
+    [SerializeField] private int tutorialSceneIndex = 3;
 
-    // =====================================================
-    // SOCIAL LINKS
-    // Links configurados no Inspector
-    // =====================================================
-    [Header("Social Links")]
-    [SerializeField] private string instagramURL;
-    [SerializeField] private string tiktokURL;
-    [SerializeField] private string facebookURL;
-    [SerializeField] private string kwaiURL;
+    [Header("Links")]
+    [SerializeField] private string beaconURL;
 
-    // =====================================================
-    // START GAME
-    // Carrega cena principal
-    // =====================================================
+    [Header("Fullscreen Buttons")]
+    [SerializeField] private GameObject fullScreenOnButton;
+    [SerializeField] private GameObject fullScreenOffButton;
+
+    void Awake()
+    {
+        // força horizontal
+        Screen.autorotateToPortrait = false;
+        Screen.autorotateToPortraitUpsideDown = false;
+        Screen.autorotateToLandscapeLeft = true;
+        Screen.autorotateToLandscapeRight = true;
+
+        // estado inicial
+        Screen.fullScreen = false;
+        UpdateFullscreenButtons();
+    }
+
     public void StartGame()
     {
         SceneManager.LoadScene(gameSceneIndex);
     }
 
-    // =====================================================
-    // OPEN TUTORIAL
-    // Carrega cena tutorial
-    // =====================================================
     public void OpenTutorial()
     {
         SceneManager.LoadScene(tutorialSceneIndex);
     }
 
-    // =====================================================
-    // SOCIAL BUTTONS
-    // Abrem links externos no navegador
-    // =====================================================
-    public void OpenInstagram()
+    public void OpenBeacon()
     {
-        OpenURL(instagramURL);
+        if (!string.IsNullOrWhiteSpace(beaconURL))
+            Application.OpenURL(beaconURL);
+        else
+            Debug.LogWarning("Beacon URL não configurada.");
     }
 
-    public void OpenTikTok()
+    public void FullScreenOn()
     {
-        OpenURL(tiktokURL);
+        Screen.fullScreen = true;
+        UpdateFullscreenButtons();
     }
 
-    public void OpenFacebook()
+    public void FullScreenOff()
     {
-        OpenURL(facebookURL);
+        Screen.fullScreen = false;
+        UpdateFullscreenButtons();
     }
 
-    public void OpenKwai()
+    void UpdateFullscreenButtons()
     {
-        OpenURL(kwaiURL);
-    }
-
-    // =====================================================
-    // MÉTODO AUXILIAR
-    // Verifica se o link está preenchido antes de abrir
-    // =====================================================
-    private void OpenURL(string url)
-    {
-        if (string.IsNullOrWhiteSpace(url))
-        {
-            Debug.LogWarning("TitleMenu: URL não configurada no Inspector.");
-            return;
-        }
-
-        Application.OpenURL(url);
+        fullScreenOnButton.SetActive(Screen.fullScreen);
+        fullScreenOffButton.SetActive(!Screen.fullScreen);
     }
 }

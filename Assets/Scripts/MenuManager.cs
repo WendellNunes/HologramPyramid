@@ -1,38 +1,40 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-// =====================================================
-// MenuManager.cs
-// Controla a cena de MENU (seleção de modelos + navegação).
-// =====================================================
-
 public class MenuManager : MonoBehaviour
 {
-    // =====================================================
-    // Scenes (Build Settings Index)
-    // =====================================================
-    [Header("Build Settings Index")]
+    [Header("Scenes")]
     [SerializeField] private int titleSceneIndex = 1;
     [SerializeField] private int mainSceneIndex = 4;
 
-    // =====================================================
-    // Beacon (Open URL)
-    // Coloque aqui o link do seu “Beacon” (lista de endereços).
-    // =====================================================
-    [Header("Beacon URL")]
+    [Header("Beacon")]
     [SerializeField] private string beaconUrl = "https://SEU_LINK_AQUI";
 
-    // =====================================================
-    // Navigation
-    // =====================================================
+    [Header("Fullscreen Buttons")]
+    [SerializeField] private GameObject fullScreenOnButton;
+    [SerializeField] private GameObject fullScreenOffButton;
+
+    private bool isFullscreen = false;
+
+    void Start()
+    {
+        // trava em horizontal
+        Screen.autorotateToPortrait = false;
+        Screen.autorotateToPortraitUpsideDown = false;
+        Screen.autorotateToLandscapeLeft = true;
+        Screen.autorotateToLandscapeRight = true;
+
+        // estado inicial
+        isFullscreen = false;
+        Screen.fullScreen = false;
+        UpdateFullscreenButtons();
+    }
+
     public void BackToTitle()
     {
         SceneManager.LoadScene(titleSceneIndex);
     }
 
-    // =====================================================
-    // Model Selection
-    // =====================================================
     public void SelectLung()
     {
         SelectedModel.Selected = SelectedModel.Choice.Lung;
@@ -63,17 +65,37 @@ public class MenuManager : MonoBehaviour
         SceneManager.LoadScene(mainSceneIndex);
     }
 
-    // =====================================================
-    // Beacon Button
-    // =====================================================
     public void OpenBeacon()
     {
         if (string.IsNullOrWhiteSpace(beaconUrl))
         {
-            Debug.LogError("MenuManager: beaconUrl está vazio. Preencha no Inspector.");
+            Debug.LogWarning("Beacon não configurado.");
             return;
         }
 
         Application.OpenURL(beaconUrl);
+    }
+
+    public void FullScreenOn()
+    {
+        isFullscreen = true;
+        Screen.fullScreen = true;
+        UpdateFullscreenButtons();
+    }
+
+    public void FullScreenOff()
+    {
+        isFullscreen = false;
+        Screen.fullScreen = false;
+        UpdateFullscreenButtons();
+    }
+
+    private void UpdateFullscreenButtons()
+    {
+        if (fullScreenOnButton != null)
+            fullScreenOnButton.SetActive(isFullscreen);
+
+        if (fullScreenOffButton != null)
+            fullScreenOffButton.SetActive(!isFullscreen);
     }
 }
