@@ -4,21 +4,20 @@ using UnityEngine.EventSystems;
 using UnityEngine.Events;
 
 // =====================================================
-// MainGameManager.cs
-// Versão Final Estável
-// Touch + Teclado + Mouse + WebGL + Mobile
+// GAME MANAGER
+// Script principal da cena.
+// Controla modelo, câmera, interface, luz e interações.
 // =====================================================
-
 public class MainGameManager : MonoBehaviour
 {
     // =====================================================
-    // Scenes
+    // SCENES
     // =====================================================
     [Header("Scenes")]
     [SerializeField] private int menuSceneIndex = 2;
 
     // =====================================================
-    // Spawn
+    // SPAWN
     // =====================================================
     [Header("Spawn")]
     [SerializeField] private Transform spawnPoint;
@@ -42,7 +41,36 @@ public class MainGameManager : MonoBehaviour
     [SerializeField] private GameObject pauseButtonObj;
 
     // =====================================================
-    // Lighting
+    // CAMERA MODE UI
+    // Botões de troca entre modo 1 face e 4 faces
+    // =====================================================
+    [Header("Camera Mode UI")]
+    [SerializeField] private GameObject oneFaceButtonObj;
+    [SerializeField] private GameObject fourFacesButtonObj;
+
+    // =====================================================
+    // CAMERAS
+    // =====================================================
+    [Header("Cameras")]
+    [SerializeField] private Camera northCamera;
+    [SerializeField] private Camera southCamera;
+    [SerializeField] private Camera eastCamera;
+    [SerializeField] private Camera westCamera;
+    [SerializeField] private Camera centerCamera;
+
+    // =====================================================
+    // CAMERA VIEW UI
+    // Máscaras visuais de cada câmera
+    // =====================================================
+    [Header("Camera View UI")]
+    [SerializeField] private GameObject maskNorthObj;
+    [SerializeField] private GameObject maskSouthObj;
+    [SerializeField] private GameObject maskEastObj;
+    [SerializeField] private GameObject maskWestObj;
+    [SerializeField] private GameObject maskCenterObj;
+
+    // =====================================================
+    // LIGHTING
     // =====================================================
     [Header("Lighting")]
     [SerializeField] private Light topLight;
@@ -54,13 +82,13 @@ public class MainGameManager : MonoBehaviour
     [SerializeField] private GameObject lightsAllButtonObj;
 
     // =====================================================
-    // Rotation
+    // ROTATION
     // =====================================================
     [Header("Rotation")]
     [SerializeField] private float rotationSpeedDegPerSec = 80f;
 
     // =====================================================
-    // Zoom
+    // ZOOM
     // =====================================================
     [Header("Zoom")]
     [SerializeField] private float zoomSpeedPerSec = 0.8f;
@@ -68,19 +96,22 @@ public class MainGameManager : MonoBehaviour
     [SerializeField] private float maxScale = 3f;
 
     // =====================================================
-    // Runtime
+    // RUNTIME
+    // Variáveis usadas durante a execução
     // =====================================================
     private GameObject currentModel;
     private Animator currentAnimator;
 
     private enum Dir { None, Left, Right }
     private enum LightMode { Off, Default, All }
+    private enum CameraMode { FourFaces, OneFace }
 
     private Dir holdRotate = Dir.None;
     private Dir autoRotate = Dir.None;
     private Dir holdZoom = Dir.None;
 
     private LightMode currentLightMode = LightMode.Default;
+    private CameraMode currentCameraMode = CameraMode.FourFaces;
 
     private float lastRightKeyTime;
     private float lastLeftKeyTime;
@@ -90,7 +121,13 @@ public class MainGameManager : MonoBehaviour
 
     // =====================================================
     // UNITY
+    // Métodos principais do ciclo de vida
     // =====================================================
+    private void Awake()
+    {
+        ForceLandscapeOnly();
+    }
+
     private void Start()
     {
         SpawnSelectedPrefab();
@@ -100,6 +137,7 @@ public class MainGameManager : MonoBehaviour
         SetPlayPause(true);
 
         SetLightMode(LightMode.Default);
+        SetCameraMode(CameraMode.FourFaces);
     }
 
     private void Update()
@@ -112,7 +150,22 @@ public class MainGameManager : MonoBehaviour
     }
 
     // =====================================================
+    // ORIENTATION
+    // Força uso apenas em horizontal
+    // =====================================================
+    private void ForceLandscapeOnly()
+    {
+        Screen.orientation = ScreenOrientation.AutoRotation;
+
+        Screen.autorotateToPortrait = false;
+        Screen.autorotateToPortraitUpsideDown = false;
+        Screen.autorotateToLandscapeLeft = true;
+        Screen.autorotateToLandscapeRight = true;
+    }
+
+    // =====================================================
     // KEYBOARD
+    // Atalhos de teclado
     // =====================================================
     private void HandleKeyboard()
     {
@@ -134,9 +187,16 @@ public class MainGameManager : MonoBehaviour
                 OpenOptionsMenu();
         }
 
-        // Light cycle
+        // Luz
         if (Input.GetKeyDown(KeyCode.L))
             CycleLightMode();
+
+        // Câmera
+        if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1))
+            ActivateOneFace();
+
+        if (Input.GetKeyDown(KeyCode.Alpha4) || Input.GetKeyDown(KeyCode.Keypad4))
+            ActivateFourFaces();
 
         // Double click RIGHT
         if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow))
@@ -158,7 +218,8 @@ public class MainGameManager : MonoBehaviour
     }
 
     // =====================================================
-    // ROTATION (Touch tem prioridade)
+    // ROTATION
+    // Touch tem prioridade sobre teclado e auto
     // =====================================================
     private void HandleRotation()
     {
@@ -186,7 +247,8 @@ public class MainGameManager : MonoBehaviour
     }
 
     // =====================================================
-    // ZOOM (Touch prioridade)
+    // ZOOM
+    // Touch tem prioridade sobre teclado
     // =====================================================
     private void HandleZoom()
     {
@@ -197,12 +259,11 @@ public class MainGameManager : MonoBehaviour
         else if (Input.GetKey(KeyCode.S))
             keyboardZoom = Dir.Left;
 
-        // Scroll
         float scroll = Input.mouseScrollDelta.y;
+
         if (scroll > 0) ApplyScaleDelta(+zoomSpeedPerSec * 5f * Time.deltaTime);
         if (scroll < 0) ApplyScaleDelta(-zoomSpeedPerSec * 5f * Time.deltaTime);
 
-        // Scroll click reset
         if (Input.GetMouseButtonDown(2))
             currentModel.transform.localScale = defaultScale;
 
@@ -225,6 +286,7 @@ public class MainGameManager : MonoBehaviour
 
     // =====================================================
     // SPAWN
+    // Instancia o prefab selecionado
     // =====================================================
     private void SpawnSelectedPrefab()
     {
@@ -252,6 +314,7 @@ public class MainGameManager : MonoBehaviour
 
     // =====================================================
     // TOUCH METHODS
+    // Eventos de segurar botão
     // =====================================================
     public void HoldTurnRightStart() { holdRotate = Dir.Right; }
     public void HoldTurnRightEnd() { if (holdRotate == Dir.Right) holdRotate = Dir.None; }
@@ -266,7 +329,8 @@ public class MainGameManager : MonoBehaviour
     public void HoldZoomOutEnd() { if (holdZoom == Dir.Left) holdZoom = Dir.None; }
 
     // =====================================================
-    // AUTO ROTATE (Touch Toggle)
+    // AUTO ROTATE
+    // Liga ou desliga rotação automática
     // =====================================================
     public void ToggleAutoTurnRight()
     {
@@ -278,74 +342,122 @@ public class MainGameManager : MonoBehaviour
         autoRotate = (autoRotate == Dir.Left) ? Dir.None : Dir.Left;
     }
 
-  // =====================================================
-// LIGHTING (modo ciclo com botão único)
-// =====================================================
-public void LightsOff()
-{
-    SetLightMode(LightMode.Off);
-}
+    // =====================================================
+    // CAMERA MODE
+    // Alterna entre 4 faces e câmera central
+    // =====================================================
+    public void ActivateFourFaces()
+    {
+        SetCameraMode(CameraMode.FourFaces);
+    }
 
-public void LightsDefault()
-{
-    SetLightMode(LightMode.Default);
-}
+    public void ActivateOneFace()
+    {
+        SetCameraMode(CameraMode.OneFace);
+    }
 
-public void LightsAll()
-{
-    SetLightMode(LightMode.All);
-}
+    private void SetCameraMode(CameraMode mode)
+    {
+        currentCameraMode = mode;
 
-private void CycleLightMode()
-{
-    if (currentLightMode == LightMode.Default)
-        SetLightMode(LightMode.All);
-    else if (currentLightMode == LightMode.All)
+        bool fourFaces = (mode == CameraMode.FourFaces);
+        bool oneFace = (mode == CameraMode.OneFace);
+
+        if (northCamera) northCamera.gameObject.SetActive(fourFaces);
+        if (southCamera) southCamera.gameObject.SetActive(fourFaces);
+        if (eastCamera) eastCamera.gameObject.SetActive(fourFaces);
+        if (westCamera) westCamera.gameObject.SetActive(fourFaces);
+        if (centerCamera) centerCamera.gameObject.SetActive(oneFace);
+
+        if (maskNorthObj) maskNorthObj.SetActive(fourFaces);
+        if (maskSouthObj) maskSouthObj.SetActive(fourFaces);
+        if (maskEastObj) maskEastObj.SetActive(fourFaces);
+        if (maskWestObj) maskWestObj.SetActive(fourFaces);
+        if (maskCenterObj) maskCenterObj.SetActive(oneFace);
+
+        UpdateCameraModeButtons();
+    }
+
+    private void UpdateCameraModeButtons()
+    {
+        if (oneFaceButtonObj) oneFaceButtonObj.SetActive(currentCameraMode == CameraMode.FourFaces);
+        if (fourFacesButtonObj) fourFacesButtonObj.SetActive(currentCameraMode == CameraMode.OneFace);
+    }
+
+    // =====================================================
+    // LIGHTING
+    // Controla os modos de luz
+    // =====================================================
+    public void LightsOff()
+    {
         SetLightMode(LightMode.Off);
-    else
+    }
+
+    public void LightsDefault()
+    {
         SetLightMode(LightMode.Default);
-}
-
-private void SetLightMode(LightMode mode)
-{
-    currentLightMode = mode;
-
-    bool topOn = (mode == LightMode.Default || mode == LightMode.All);
-    bool bottomOn = (mode == LightMode.Default || mode == LightMode.All);
-    bool camsOn = (mode == LightMode.All);
-
-    if (topLight) topLight.enabled = topOn;
-    if (bottomLight) bottomLight.enabled = bottomOn;
-
-    if (cameraLights != null)
-        foreach (var l in cameraLights)
-            if (l) l.enabled = camsOn;
-
-    SetLightingButtons(mode);
-}
-
-private void SetLightingButtons(LightMode mode)
-{
-    if (lightsOffButtonObj) lightsOffButtonObj.SetActive(false);
-    if (lightsDefaultButtonObj) lightsDefaultButtonObj.SetActive(false);
-    if (lightsAllButtonObj) lightsAllButtonObj.SetActive(false);
-
-    if (mode == LightMode.Default)
-    {
-        if (lightsAllButtonObj) lightsAllButtonObj.SetActive(true);
     }
-    else if (mode == LightMode.All)
+
+    public void LightsAll()
     {
-        if (lightsOffButtonObj) lightsOffButtonObj.SetActive(true);
+        SetLightMode(LightMode.All);
     }
-    else
+
+    private void CycleLightMode()
     {
-        if (lightsDefaultButtonObj) lightsDefaultButtonObj.SetActive(true);
+        if (currentLightMode == LightMode.Default)
+            SetLightMode(LightMode.All);
+        else if (currentLightMode == LightMode.All)
+            SetLightMode(LightMode.Off);
+        else
+            SetLightMode(LightMode.Default);
     }
-}
+
+    private void SetLightMode(LightMode mode)
+    {
+        currentLightMode = mode;
+
+        bool topOn = (mode == LightMode.Default || mode == LightMode.All);
+        bool bottomOn = (mode == LightMode.Default || mode == LightMode.All);
+        bool camsOn = (mode == LightMode.All);
+
+        if (topLight) topLight.enabled = topOn;
+        if (bottomLight) bottomLight.enabled = bottomOn;
+
+        if (cameraLights != null)
+        {
+            foreach (var l in cameraLights)
+            {
+                if (l) l.enabled = camsOn;
+            }
+        }
+
+        SetLightingButtons(mode);
+    }
+
+    private void SetLightingButtons(LightMode mode)
+    {
+        if (lightsOffButtonObj) lightsOffButtonObj.SetActive(false);
+        if (lightsDefaultButtonObj) lightsDefaultButtonObj.SetActive(false);
+        if (lightsAllButtonObj) lightsAllButtonObj.SetActive(false);
+
+        if (mode == LightMode.Default)
+        {
+            if (lightsAllButtonObj) lightsAllButtonObj.SetActive(true);
+        }
+        else if (mode == LightMode.All)
+        {
+            if (lightsOffButtonObj) lightsOffButtonObj.SetActive(true);
+        }
+        else
+        {
+            if (lightsDefaultButtonObj) lightsDefaultButtonObj.SetActive(true);
+        }
+    }
 
     // =====================================================
     // MENU
+    // Controle do painel de opções
     // =====================================================
     public void BackToMenu() => SceneManager.LoadScene(menuSceneIndex);
 
@@ -369,6 +481,7 @@ private void SetLightingButtons(LightMode mode)
 
     // =====================================================
     // PLAY / PAUSE
+    // Controle da animação do modelo
     // =====================================================
     public void PlayAnimation()
     {
@@ -386,44 +499,5 @@ private void SetLightingButtons(LightMode mode)
     {
         if (playButtonObj) playButtonObj.SetActive(!isPlaying);
         if (pauseButtonObj) pauseButtonObj.SetActive(isPlaying);
-    }
-}
-// =====================================================
-// DoubleTapDetector.cs (pode ficar no mesmo arquivo)
-// Resolve: double tap no MOBILE não virar "double click"
-// Como usar:
-// 1) Adicione este componente no botão (RotationRight/RotationLeft)
-// 2) No Inspector, em "On Double Tap", arraste o objeto do MainGameManager
-// 3) Selecione: ToggleAutoTurnRight() ou ToggleAutoTurnLeft()
-// IMPORTANTE: deixe o Button->OnClick vazio para não conflitar com o Hold.
-// =====================================================
-
-public class DoubleTapDetector : MonoBehaviour, IPointerClickHandler
-{
-    [Tooltip("Tempo máximo entre dois taps/cliques para contar como double tap")]
-    public float maxDelay = 0.30f;
-
-    [Tooltip("Dispara quando detectar double tap/clique")]
-    public UnityEvent onDoubleTap;
-
-    private float lastTapTime = -10f;
-    private int tapCount = 0;
-
-    public void OnPointerClick(PointerEventData eventData)
-    {
-        float now = Time.unscaledTime; // funciona mesmo se Time.timeScale = 0
-
-        if (now - lastTapTime <= maxDelay)
-            tapCount++;
-        else
-            tapCount = 1;
-
-        lastTapTime = now;
-
-        if (tapCount >= 2)
-        {
-            tapCount = 0;
-            onDoubleTap?.Invoke();
-        }
     }
 }

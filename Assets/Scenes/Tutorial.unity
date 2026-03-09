@@ -426,6 +426,8 @@ MonoBehaviour:
   nextButton: {fileID: 229619164}
   startButton: {fileID: 54905541}
   disabledAlpha: 0.35
+  fullScreenOnButton: {fileID: 753898039}
+  fullScreenOffButton: {fileID: 1346762627}
 --- !u!4 &641747936
 Transform:
   m_ObjectHideFlags: 0
@@ -602,9 +604,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: MenuManager, Assembly-CSharp
-        m_MethodName: BackToTitle
+      - m_Target: {fileID: 641747935}
+        m_TargetAssemblyTypeName: TutorialManager, Assembly-CSharp
+        m_MethodName: FullScreenOn
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1068,9 +1070,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: MenuManager, Assembly-CSharp
-        m_MethodName: BackToTitle
+      - m_Target: {fileID: 641747935}
+        m_TargetAssemblyTypeName: TutorialManager, Assembly-CSharp
+        m_MethodName: FullScreenOff
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

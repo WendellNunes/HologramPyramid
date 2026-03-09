@@ -1,33 +1,70 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
-public class TitleMenu : MonoBehaviour
+public class TitleManager : MonoBehaviour
 {
+    // =====================================================
+    // SCENES
+    // =====================================================
     [Header("Scenes")]
     [SerializeField] private int gameSceneIndex = 2;
     [SerializeField] private int tutorialSceneIndex = 3;
 
+    // =====================================================
+    // LINKS
+    // =====================================================
     [Header("Links")]
     [SerializeField] private string beaconURL;
 
+    // =====================================================
+    // FULLSCREEN BUTTONS
+    // fullScreenOnButton  = botão para ENTRAR em fullscreen
+    // fullScreenOffButton = botão para SAIR do fullscreen
+    // =====================================================
     [Header("Fullscreen Buttons")]
     [SerializeField] private GameObject fullScreenOnButton;
     [SerializeField] private GameObject fullScreenOffButton;
 
-    void Awake()
+    // =====================================================
+    // AWAKE
+    // trava horizontal
+    // =====================================================
+    private void Awake()
     {
-        // força horizontal
+        ForceLandscapeOnly();
+    }
+
+    // =====================================================
+    // START
+    // =====================================================
+    private void Start()
+    {
+        UpdateFullscreenButtons();
+    }
+
+    // =====================================================
+    // UPDATE
+    // mantém sincronizado caso o navegador altere o estado
+    // =====================================================
+    private void Update()
+    {
+        UpdateFullscreenButtons();
+    }
+
+    // =====================================================
+    // ORIENTATION
+    // =====================================================
+    private void ForceLandscapeOnly()
+    {
         Screen.autorotateToPortrait = false;
         Screen.autorotateToPortraitUpsideDown = false;
         Screen.autorotateToLandscapeLeft = true;
         Screen.autorotateToLandscapeRight = true;
-
-        // estado inicial
-        Screen.fullScreen = false;
-        UpdateFullscreenButtons();
     }
 
+    // =====================================================
+    // NAVIGATION
+    // =====================================================
     public void StartGame()
     {
         SceneManager.LoadScene(gameSceneIndex);
@@ -38,6 +75,9 @@ public class TitleMenu : MonoBehaviour
         SceneManager.LoadScene(tutorialSceneIndex);
     }
 
+    // =====================================================
+    // LINK
+    // =====================================================
     public void OpenBeacon()
     {
         if (!string.IsNullOrWhiteSpace(beaconURL))
@@ -46,6 +86,9 @@ public class TitleMenu : MonoBehaviour
             Debug.LogWarning("Beacon URL não configurada.");
     }
 
+    // =====================================================
+    // FULLSCREEN
+    // =====================================================
     public void FullScreenOn()
     {
         Screen.fullScreen = true;
@@ -58,9 +101,15 @@ public class TitleMenu : MonoBehaviour
         UpdateFullscreenButtons();
     }
 
-    void UpdateFullscreenButtons()
+    // =====================================================
+    // UPDATE FULLSCREEN BUTTONS
+    // =====================================================
+    private void UpdateFullscreenButtons()
     {
-        fullScreenOnButton.SetActive(Screen.fullScreen);
-        fullScreenOffButton.SetActive(!Screen.fullScreen);
+        if (fullScreenOnButton != null)
+            fullScreenOnButton.SetActive(!Screen.fullScreen);
+
+        if (fullScreenOffButton != null)
+            fullScreenOffButton.SetActive(Screen.fullScreen);
     }
 }

@@ -3,33 +3,56 @@ using UnityEngine.SceneManagement;
 
 public class MenuManager : MonoBehaviour
 {
+    // =====================================================
+    // SCENES
+    // =====================================================
     [Header("Scenes")]
     [SerializeField] private int titleSceneIndex = 1;
     [SerializeField] private int mainSceneIndex = 4;
 
+    // =====================================================
+    // BEACON
+    // =====================================================
     [Header("Beacon")]
     [SerializeField] private string beaconUrl = "https://SEU_LINK_AQUI";
 
+    // =====================================================
+    // FULLSCREEN BUTTONS
+    // fullScreenOnButton  = botão para ENTRAR em fullscreen
+    // fullScreenOffButton = botão para SAIR do fullscreen
+    // =====================================================
     [Header("Fullscreen Buttons")]
     [SerializeField] private GameObject fullScreenOnButton;
     [SerializeField] private GameObject fullScreenOffButton;
 
     private bool isFullscreen = false;
 
-    void Start()
+    // =====================================================
+    // START
+    // =====================================================
+    private void Start()
     {
-        // trava em horizontal
+        ForceLandscapeOnly();
+
+        isFullscreen = Screen.fullScreen;
+        UpdateFullscreenButtons();
+    }
+
+    // =====================================================
+    // ORIENTATION
+    // trava horizontal
+    // =====================================================
+    private void ForceLandscapeOnly()
+    {
         Screen.autorotateToPortrait = false;
         Screen.autorotateToPortraitUpsideDown = false;
         Screen.autorotateToLandscapeLeft = true;
         Screen.autorotateToLandscapeRight = true;
-
-        // estado inicial
-        isFullscreen = false;
-        Screen.fullScreen = false;
-        UpdateFullscreenButtons();
     }
 
+    // =====================================================
+    // NAVIGATION
+    // =====================================================
     public void BackToTitle()
     {
         SceneManager.LoadScene(titleSceneIndex);
@@ -65,6 +88,9 @@ public class MenuManager : MonoBehaviour
         SceneManager.LoadScene(mainSceneIndex);
     }
 
+    // =====================================================
+    // BEACON LINK
+    // =====================================================
     public void OpenBeacon()
     {
         if (string.IsNullOrWhiteSpace(beaconUrl))
@@ -76,6 +102,9 @@ public class MenuManager : MonoBehaviour
         Application.OpenURL(beaconUrl);
     }
 
+    // =====================================================
+    // FULLSCREEN
+    // =====================================================
     public void FullScreenOn()
     {
         isFullscreen = true;
@@ -90,12 +119,16 @@ public class MenuManager : MonoBehaviour
         UpdateFullscreenButtons();
     }
 
+    // =====================================================
+    // UPDATE FULLSCREEN BUTTONS
+    // Mostra o botão da ação disponível
+    // =====================================================
     private void UpdateFullscreenButtons()
     {
         if (fullScreenOnButton != null)
-            fullScreenOnButton.SetActive(isFullscreen);
+            fullScreenOnButton.SetActive(!isFullscreen);
 
         if (fullScreenOffButton != null)
-            fullScreenOffButton.SetActive(!isFullscreen);
+            fullScreenOffButton.SetActive(isFullscreen);
     }
 }

@@ -3,87 +3,70 @@ using UnityEngine.SceneManagement;
 using UnityEngine.Video;
 
 // =====================================================
-// SplashVideoToScene.cs
-// Controla vídeo de abertura (splash screen)
-// Quando o vídeo termina → carrega próxima cena automaticamente.
+// SPLASH CONTROLLER
+// Controla o vídeo de abertura.
+// Quando o vídeo termina → carrega a próxima cena.
 // =====================================================
 
 public class SplashVideoToScene : MonoBehaviour
 {
     // =====================================================
-    // REFERÊNCIAS
+    // REFERÊNCIAS DO VÍDEO
     // =====================================================
+
     [Header("Componentes")]
-    [SerializeField] private VideoPlayer videoPlayer; // vídeo da intro
-    [SerializeField] private AudioSource audioSource; // áudio do vídeo
+    [SerializeField] private VideoPlayer videoPlayer;
+    [SerializeField] private AudioSource audioSource;
 
     // =====================================================
     // CENA DESTINO
     // =====================================================
+
     [Header("Next Scene")]
-    [SerializeField] private int nextSceneIndex = 1; // índice da próxima cena no Build Settings
+    [SerializeField] private int nextSceneIndex = 1;
 
     // =====================================================
     // CONTROLE INTERNO
-    // Evita carregar a cena duas vezes
+    // Evita carregar duas vezes a mesma cena
     // =====================================================
+
     private bool loading = false;
 
     // =====================================================
-    // AWAKE
-    // Configura o player antes de iniciar
+    // CONFIGURAÇÃO INICIAL
     // =====================================================
+
     private void Awake()
     {
-        // vídeo não inicia automaticamente
         videoPlayer.playOnAwake = false;
-
-        // não fica em loop
         videoPlayer.isLooping = false;
-
-        // espera carregar primeiro frame antes de mostrar
         videoPlayer.waitForFirstFrame = true;
 
-        // -------------------------
-        // Configurar áudio do vídeo
-        // -------------------------
+        // configurar áudio
         videoPlayer.audioOutputMode = VideoAudioOutputMode.AudioSource;
         videoPlayer.EnableAudioTrack(0, true);
         videoPlayer.SetTargetAudioSource(0, audioSource);
-
-        // -------------------------
-        // Evento quando vídeo termina
-        // -------------------------
-        videoPlayer.loopPointReached += OnVideoFinished;
     }
 
     // =====================================================
-    // START
-    // Prepara e inicia vídeo
+    // INICIAR VÍDEO
     // =====================================================
+
     private void Start()
     {
-        // prepara o vídeo antes de tocar
-        videoPlayer.Prepare();
-
-        // quando terminar de preparar:
-        videoPlayer.prepareCompleted += (_) =>
-        {
-            audioSource.Play();   // toca áudio
-            videoPlayer.Play();   // toca vídeo
-        };
+        videoPlayer.loopPointReached += OnVideoFinished;
+        videoPlayer.Play();
     }
 
     // =====================================================
-    // QUANDO O VÍDEO TERMINA
+    // FINAL DO VÍDEO
     // =====================================================
+
     private void OnVideoFinished(VideoPlayer vp)
     {
-        // evita duplicar load
         if (loading) return;
-        loading = true;
 
-        // carrega próxima cena
+        loading = true;
         SceneManager.LoadScene(nextSceneIndex);
     }
 }

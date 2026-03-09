@@ -1,14 +1,16 @@
 // =====================================================
-// SelectedModel.cs
-// Guarda qual modelo foi escolhido no MENU, para a cena principal.
+// SELECTED MODEL
+// Guarda qual modelo foi escolhido no MENU.
+// A cena principal lê essa informação para spawnar.
 // =====================================================
 
 public static class SelectedModel
 {
+
     // =====================================================
-    // Choice
-    // (Adicionamos Trachea e Heart)
-// =====================================================
+    // TIPOS DE MODELO
+    // =====================================================
+
     public enum Choice
     {
         Lung,
@@ -19,7 +21,8 @@ public static class SelectedModel
     }
 
     // =====================================================
-    // Selected (default)
+    // MODELO SELECIONADO
     // =====================================================
+
     public static Choice Selected = Choice.Lung;
 }

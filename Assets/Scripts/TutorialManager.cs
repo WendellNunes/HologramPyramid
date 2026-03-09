@@ -4,10 +4,9 @@ using UnityEngine.UI;
 
 // =====================================================
 // TutorialManager.cs
-// Controla o tutorial em páginas (imagens):
-// - Avançar / voltar páginas
-// - Botão Start só na última página
-// - Voltar ao menu inicial
+// Controla o tutorial em páginas
+// + Fullscreen on/off
+// + Trava horizontal
 // =====================================================
 
 public class TutorialManager : MonoBehaviour
@@ -30,28 +29,84 @@ public class TutorialManager : MonoBehaviour
     // BUTTONS
     // =====================================================
     [Header("Buttons")]
-    [SerializeField] private Button backButton;  
+    [SerializeField] private Button backButton;
     [SerializeField] private Button prevButton;
     [SerializeField] private Button nextButton;
     [SerializeField] private Button startButton;
     [SerializeField] private float disabledAlpha = 0.35f;
 
+    // =====================================================
+    // FULLSCREEN BUTTONS
+    // =====================================================
+    [Header("Fullscreen Buttons")]
+    [SerializeField] private GameObject fullScreenOnButton;
+    [SerializeField] private GameObject fullScreenOffButton;
+
     private int index = 0;
 
+    // =====================================================
+    // START
+    // =====================================================
     private void Start()
     {
+        ForceLandscapeOnly();
+
         if (pages == null || pages.Length == 0)
         {
             Debug.LogError("TutorialManager: 'pages' está vazio. Adicione os sprites do tutorial no Inspector.");
             return;
         }
 
-        // Deixa o botão Back desabilitado (mas mantém a função no script)
         if (backButton != null)
             backButton.interactable = false;
 
         index = 0;
         UpdateUI();
+        UpdateFullscreenButtons();
+    }
+
+    // =====================================================
+    // UPDATE
+    // =====================================================
+    private void Update()
+    {
+        UpdateFullscreenButtons();
+    }
+
+    // =====================================================
+    // ORIENTATION
+    // trava horizontal
+    // =====================================================
+    private void ForceLandscapeOnly()
+    {
+        Screen.autorotateToPortrait = false;
+        Screen.autorotateToPortraitUpsideDown = false;
+        Screen.autorotateToLandscapeLeft = true;
+        Screen.autorotateToLandscapeRight = true;
+    }
+
+    // =====================================================
+    // FULLSCREEN
+    // =====================================================
+    public void FullScreenOn()
+    {
+        Screen.fullScreen = true;
+        UpdateFullscreenButtons();
+    }
+
+    public void FullScreenOff()
+    {
+        Screen.fullScreen = false;
+        UpdateFullscreenButtons();
+    }
+
+    private void UpdateFullscreenButtons()
+    {
+        if (fullScreenOnButton != null)
+            fullScreenOnButton.SetActive(!Screen.fullScreen);
+
+        if (fullScreenOffButton != null)
+            fullScreenOffButton.SetActive(Screen.fullScreen);
     }
 
     // =====================================================
@@ -64,7 +119,6 @@ public class TutorialManager : MonoBehaviour
 
     // =====================================================
     // PÁGINA ANTERIOR
-    // - Se estiver na primeira página, volta pro Title
     // =====================================================
     public void PrevPage()
     {
@@ -105,17 +159,17 @@ public class TutorialManager : MonoBehaviour
 
         bool isLast = (index == pages.Length - 1);
 
-        // PREV agora sempre fica habilitado (porque no 1º sprite ele volta pro Title)
         prevButton.interactable = true;
 
-        // NEXT desativa na última
         nextButton.interactable = !isLast;
         SetButtonAlpha(nextButton, isLast ? disabledAlpha : 1f);
 
-        // START só na última
         startButton.gameObject.SetActive(isLast);
     }
 
+    // =====================================================
+    // BUTTON VISUAL ALPHA
+    // =====================================================
     private void SetButtonAlpha(Button btn, float a)
     {
         var g = btn.targetGraphic;
